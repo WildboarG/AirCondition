@@ -212,4 +212,5 @@ void Send_IR(uint16_t *buf,uint8_t len)
             bflb_mtimer_delay_us(buf[i]); // 低电平（空闲时间）
         }
     }
+    bflb_gpio_reset(gpio,IR);
 }
