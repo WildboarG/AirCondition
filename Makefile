@@ -1,25 +1,38 @@
-# ********************************#
-# 编译配置
-# Compile Configuration
-# ********************************#
+#
+# This is a project Makefile. It is assumed the directory this Makefile resides in is a
+# project subdirectory.
+#
 
-# 当前工程文件路径(Current project file path)
-SDK_DEMO_PATH ?= .
-# 配置SDK路径(Configure SDK path)
-BL_SDK_BASE ?= $(SDK_DEMO_PATH)/../aithinker_Ai-M6X_SDK
-##BL_SDK_BASE ?= $(SDK_DEMO_PATH)/../bouffalo_sdk
-# 设置SDK路径(Set SDK path)
-export BL_SDK_BASE
+PROJECT_NAME := IR01
+PROJECT_PATH := $(abspath .)
+PROJECT_BOARD := evb
+export PROJECT_PATH PROJECT_BOARD
+#CONFIG_TOOLPREFIX :=
 
-#配置芯片型号，M61/M62都配置成bl616(Configure chip models, with both M61 and M62 configured as bl616)
-CHIP ?= bl616
-#配置板子类型，M61/M62 保持 “bl616dk”(Configuration board subtype, M61/M62 maintains' bl616dk ')
-BOARD ?= bl616dk
-#配置编译工具链(Configure Compilation Toolchain)
-CROSS_COMPILE ?= riscv64-unknown-elf-
+-include ./proj_config.mk
 
-# add custom cmake definition
-#cmake_definition+=-Dxxx=sss
-COMX=/dev/ttyUSB0
-#引用实际的编译配置(Reference the actual compilation configuration)
-include $(BL_SDK_BASE)/project.build
+ifeq ($(origin BL60X_SDK_PATH), undefined)
+BL60X_SDK_PATH_GUESS ?= $(shell pwd)
+BL60X_SDK_PATH ?= $(BL60X_SDK_PATH_GUESS)/../Ai-Thinker-WB2
+$(info ****** Please SET BL60X_SDK_PATH ******)
+$(info ****** Trying SDK PATH [$(BL60X_SDK_PATH)])
+endif
+
+COMPONENTS_NETWORK := sntp dns_server
+COMPONENTS_BLSYS   := bltime blfdt blmtd blota bloop loopadc looprt loopset
+COMPONENTS_VFS     := romfs
+COMPONENTS_MQTT    := axk_common tcp_transport http-parser axk_tls axk_mqtt
+
+INCLUDE_COMPONENTS += freertos_riscv_ram bl602 bl602_std newlibc wifi wifi_manager wpa_supplicant bl_os_adapter wifi_hosal hosal mbedtls_lts lwip lwip_dhcpd vfs yloop utils cli aws-iot httpc netutils blog blog_testc blcrypto_suite
+INCLUDE_COMPONENTS += easyflash4 coredump
+INCLUDE_COMPONENTS += rfparam_adapter_tmp
+INCLUDE_COMPONENTS += $(COMPONENTS_NETWORK)
+INCLUDE_COMPONENTS += $(COMPONENTS_BLSYS)
+INCLUDE_COMPONENTS += $(COMPONENTS_VFS)
+INCLUDE_COMPONENTS += $(COMPONENTS_MQTT)
+INCLUDE_COMPONENTS += $(PROJECT_NAME)
+
+INCLUDE_COMPONENTS += smartconfig_airkiss
+EXTRA_COMPONENT_DIRS += $(PROJECT_PATH)/smartconfig_airkiss
+
+include $(BL60X_SDK_PATH)/make_scripts_riscv/project.mk
