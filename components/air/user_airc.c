@@ -18,12 +18,15 @@
 #include "bflb_gpio.h"
 #include "bflb_mtimer.h"
 #include "bflb_timer.h"
+#include "bflb_pwm_v2.h"      //pwm_v2头文件
+#include "bflb_clock.h"           //系统时钟头文件
 #include "user_state.h"
 #define DBG_TAG "LED"
 
 
 struct bflb_device_s* gpio;
 struct bflb_device_s*  timer0;
+struct bflb_device_s *pwm;     //创建LHAL外设库结构体，名称为pwm
 
 static xTaskHandle configNet_task;
 static xTaskHandle configNet_stop;
@@ -50,15 +53,15 @@ uint16_t rawData[15][139]={  //temp code
 
 uint16_t off[139]= {9024, 4436,  688, 1606,  690, 534,  666, 512,  690, 512,  688, 1608,  690, 510,  690, 512,  690, 510,  690, 512,  688, 512,  690, 510,  690, 1608,  690, 512,  688, 512,  690, 512,  688, 510,  690, 512,  688, 514,  688, 510,  692, 512,  686, 512,  688, 1608,  688, 510,  692, 512,  688, 514,  688, 512,  688, 510,  690, 514,  688, 1606,  690, 512,  688, 1608,  688, 514,  688, 534,  668, 1608,  688, 512,  688, 19950,  666, 512,  688, 510,  690, 512,  688, 512,  688, 512,  690, 510,  690, 512,  688, 512,  688, 534,  668, 512,  688, 510,  690, 512,  690, 512,  688, 1606,  690, 510,  690, 512,  688, 512,  690, 514,  688, 512,  688, 512,  688, 534,  668, 512,  688, 512,  690, 514,  686, 512,  690, 512,  690, 512,  688, 512,  690, 1606,  688, 514,  686, 1608,  690, 512,  688};
 
-void timer0_isr(int irq, void *arg)//timer0中端服务程序
-{
-    bool status = bflb_timer_get_compint_status(timer0, TIMER_COMP_ID_0);
-    if (status) {
-        bflb_timer_compint_clear(timer0, TIMER_COMP_ID_0);
-        ir_pin_status ? bflb_gpio_set(gpio,IR) : bflb_gpio_reset(gpio,IR);
-        ir_pin_status=!ir_pin_status;
-    }
-}
+// void timer0_isr(int irq, void *arg)//timer0中端服务程序
+// {
+//     bool status = bflb_timer_get_compint_status(timer0, TIMER_COMP_ID_0);
+//     if (status) {
+//         bflb_timer_compint_clear(timer0, TIMER_COMP_ID_0);
+//         ir_pin_status ? bflb_gpio_set(gpio,IR) : bflb_gpio_reset(gpio,IR);
+//         ir_pin_status=!ir_pin_status;
+//     }
+// }
 
 /**
  * @brief  configNET_start
@@ -78,6 +81,17 @@ static void configNET_start(void* arg) //
  * @brief
  *
 */
+
+void my_pwm_gpio_init()        //编写一个选择pwm输出的gpio口初始化函数
+{
+    struct bflb_device_s *gpio;
+
+    gpio = bflb_device_get_by_name("gpio");
+
+    bflb_gpio_init(gpio, GPIO_PIN_0, GPIO_FUNC_PWM0 | GPIO_ALTERNATE | GPIO_PULLUP | GPIO_SMT_EN | GPIO_DRV_1);
+//选择IO0作为pwm输出，
+}
+
 void ac_init(void)
 {
     gpio = bflb_device_get_by_name("gpio");
@@ -86,22 +100,24 @@ void ac_init(void)
     bflb_gpio_init(gpio, IR, GPIO_OUTPUT | GPIO_PULLUP | GPIO_SMT_EN | GPIO_DRV_0); //IR 
     bflb_gpio_reset(gpio, LED_CONFIG_NET);
     bflb_gpio_reset(gpio, LED_DEV);
-    bflb_gpio_reset(gpio, IR);  gpio = bflb_device_get_by_name("gpio");
-    //初始化为3个端口
+    bflb_gpio_reset(gpio, IR);  
 
-    struct bflb_timer_config_s cfg0;
-    cfg0.counter_mode = TIMER_COUNTER_MODE_PROLOAD; 
-    cfg0.clock_source = TIMER_CLKSRC_XTAL;//外部时钟为40
-    cfg0.clock_div = 39; 
-    cfg0.trigger_comp_id = TIMER_COMP_ID_0;
-    cfg0.comp0_val = 13; 
-    cfg0.preload_val = 0;    
- 
- 
-    timer0 = bflb_device_get_by_name("timer0");
-    bflb_timer_init(timer0, &cfg0);
-    bflb_irq_attach(timer0->irq_num, timer0_isr, NULL);
-    bflb_irq_enable(timer0->irq_num);
+      my_pwm_gpio_init();         //调用函数，里面设置好了pwm输出的gpio口
+
+    pwm = bflb_device_get_by_name("pwm_v2_0");  //给外设接口赋名pwm_v2_0
+
+    /* period = .XCLK / .clk_div / .period = 40MHz / 40 / 1000 = 1KHz */
+
+    struct bflb_pwm_v2_config_s cfg = {
+        .clk_source = BFLB_SYSTEM_XCLK,
+        .clk_div = 7,
+        .period = 150,
+    };                //设置PWM的频率，选择时钟，分频，和周期。根据上面的公式算出最终的频率。
+
+    /*初始化PWM输出*/
+    bflb_pwm_v2_init(pwm, &cfg);
+    bflb_pwm_v2_channel_set_threshold(pwm, PWM_CH0,75, 150); //改变占空比，变量i会不断变化
+
  
 
     xTaskCreate(configNET_start, "configNET_task", 1024, NULL, 2, &configNet_task);
@@ -203,14 +219,13 @@ void Send_IR(uint16_t *buf,uint8_t len)
    // printf("Sending IR code...\n");
     for (uint16_t i = 0; i < len; i++) {
         if (i%2==0) {
-            bflb_timer_start(timer0);     // 启用38kHz载波
+           bflb_pwm_v2_start(pwm);          //将设置好的频率开启pwm输出
             bflb_mtimer_delay_us(buf[i]); // 高电平（脉冲时间）
-            bflb_timer_stop(timer0);      // 停止38kHz载波
+            bflb_pwm_v2_stop(pwm);          //将设置好的频率关闭pwm输出
 
         } else {
-            bflb_gpio_reset(gpio, IR);
+            //bflb_gpio_reset(gpio, IR);
             bflb_mtimer_delay_us(buf[i]); // 低电平（空闲时间）
         }
-    }
-    bflb_gpio_reset(gpio,IR);
+    }   
 }

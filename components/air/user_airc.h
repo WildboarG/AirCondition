@@ -16,7 +16,7 @@
 #define IR 0
 
 
-void timer0_isr(int irq, void *arg);
+// void timer0_isr(int irq, void *arg);
 void ac_init(void);
 void led_indicator_change(int led_state);
 void led_dev_open(int* led_state);
@@ -24,5 +24,6 @@ void led_dev_cloes(int* led_state);
 void ctlAC(int status);
 void Wait_High(uint16_t a);
 void Wait_Low(uint16_t a);
+void my_pwm_gpio_init(void);
 void Send_IR(uint16_t *buf,uint8_t len);
 #endif
