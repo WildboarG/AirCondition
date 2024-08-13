@@ -23,6 +23,8 @@
 #include "user_state.h"
 #define DBG_TAG "LED"
 
+#define PWM_POLARITY_ACTIVE_LOW  0
+#define PWM_POLARITY_ACTIVE_HIGH 1
 
 struct bflb_device_s* gpio;
 struct bflb_device_s*  timer0;
@@ -90,6 +92,7 @@ void my_pwm_gpio_init()        //编写一个选择pwm输出的gpio口初始化�
 
     bflb_gpio_init(gpio, GPIO_PIN_0, GPIO_FUNC_PWM0 | GPIO_ALTERNATE | GPIO_PULLUP | GPIO_SMT_EN | GPIO_DRV_1);
 //选择IO0作为pwm输出，
+    bflb_gpio_reset(gpio,GPIO_PIN_0);
 }
 
 void ac_init(void)
@@ -116,7 +119,7 @@ void ac_init(void)
 
     /*初始化PWM输出*/
     bflb_pwm_v2_init(pwm, &cfg);
-    bflb_pwm_v2_channel_set_threshold(pwm, PWM_CH0,75, 150); //改变占空比，变量i会不断变化
+    bflb_pwm_v2_channel_set_threshold(pwm, PWM_CH0,0, 75); //改变占空比，变量i会不断变化
 
  
 
@@ -216,7 +219,8 @@ void ctlAC(int status){
 
 void Send_IR(uint16_t *buf,uint8_t len)
 {
-   // printf("Sending IR code...\n");
+    printf("Sending IR code...\n");
+    bflb_pwm_v2_channel_positive_start(pwm, PWM_CH0);
     for (uint16_t i = 0; i < len; i++) {
         if (i%2==0) {
            bflb_pwm_v2_start(pwm);          //将设置好的频率开启pwm输出
@@ -224,8 +228,9 @@ void Send_IR(uint16_t *buf,uint8_t len)
             bflb_pwm_v2_stop(pwm);          //将设置好的频率关闭pwm输出
 
         } else {
-            //bflb_gpio_reset(gpio, IR);
+            bflb_gpio_reset(gpio, IR);
             bflb_mtimer_delay_us(buf[i]); // 低电平（空闲时间）
         }
-    }   
+    }
+    bflb_pwm_v2_channel_positive_stop(pwm, PWM_CH0);
 }

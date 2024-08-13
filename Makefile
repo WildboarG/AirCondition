@@ -6,7 +6,7 @@
 # 当前工程文件路径(Current project file path)
 SDK_DEMO_PATH ?= .
 # 配置SDK路径(Configure SDK path)
-BL_SDK_BASE ?= $(SDK_DEMO_PATH)/../aithinker_Ai-M6X_SDK
+BL_SDK_BASE ?= $(SDK_DEMO_PATH)/../AiPi-Open-Kits/aithinker_Ai-M6X_SDK
 ##BL_SDK_BASE ?= $(SDK_DEMO_PATH)/../bouffalo_sdk
 # 设置SDK路径(Set SDK path)
 export BL_SDK_BASE

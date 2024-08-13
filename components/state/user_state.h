@@ -12,7 +12,7 @@
 #define USER_STATE_H
 
 #define SSID "CMCC-RS6f"  
-#define PASS "password"
+#define PASS "xxxxxxxxx"
 
 #define SSID_KEY "SSID"
 #define PASS_KEY "PASS"
@@ -21,7 +21,7 @@
 
 #define MQ_USERNAME "test"
 #define MQ_DEF_HOST "192.168.1.254"
-#define MQ_DEF_PORT 1888
+#define MQ_DEF_PORT 1883
 #define MQ_HOST_KEY "MQ_HOST"
 #define MQ_SUB_TOPIC "home/ac"
 #define MQ_PUB_TOPIC "home/ac"
