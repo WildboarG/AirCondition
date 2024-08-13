@@ -53,6 +53,7 @@ static void smart_airkiss_stop(void *data)
 	{
 		printf("stop airkiss\r\n");
 		wifi_airkiss_v1_stop();
+		 puts("mqtt task start\r\n");
 		extern void mqtt_start(void);
     	mqtt_start();  //跳出main.c 进入aircondition执行mqtt部分
 	}		
