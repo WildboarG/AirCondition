@@ -11,7 +11,11 @@
 #include <bl_gpio.h>
 #include "bl_timer.h"
 #include "bl_irq.h"
+#include <bl602.h>
+#include <bl602_gpio.h>
 #include <bl602_timer.h>
+#include <bl602_glb.h>
+#include <bl_pwm.h>
 #include "blog.h"
 #include "config.h"
 
@@ -41,7 +45,7 @@ static uint16_t offData[RAWSIZE]= {9000, 4436,  688, 1606,  690, 534,  666, 512,
 
 void mqtt_connected_callback();
 void mqtt_start(void);
-
+BL_Err_Type PWM_Smart_Configure2(PWM_CH_ID_Type ch, uint16_t clkDiv, uint16_t period, uint16_t threshold2);
 static void timer_cb(void *arg);
 static void ctlAC(int status);
 static void offAC(void);
