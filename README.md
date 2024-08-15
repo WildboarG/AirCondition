@@ -20,7 +20,7 @@ Make a simple air-conditioning remote control with Ai-M61-32S-kit
 
 ---
 
-- 使用GPIO模拟高低电平控制红外发射管(使用定时器改变电平状态)
+- 使用GPIO模拟高低电平控制红外发射管(使用pwm改变电平状态)
 - 使用空调遥控器的原始数据发送（如何获取各种遥控器的原始数据，参见arduino  IRremoteESP8266/IRrecvDumpV2.ino）
 
 
